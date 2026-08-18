@@ -320,6 +320,7 @@ Export([pageId], "html-tailwind", "./landing.html")
 - `Export` writes files. Image formats (`png`/`jpeg`/`webp`/`pdf`) take a **directory**; HTML formats
   (`html-tailwind`/`html-css`) take a **file** path. Default image scale is 2. PDF combines nodes
   into one multi-page `export.pdf`. Use Export for handoff, `TakeScreenshot` for review.
+  `"document"` is not a valid Export id. One PNG of several root siblings: [`export.md`](export.md).
 
 ## Components and instances
 

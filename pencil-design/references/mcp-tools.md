@@ -159,6 +159,8 @@ Export([pageId], "html-tailwind", "./landing.html")
 
 Formats: `png` | `jpeg` | `webp` | `pdf` | `html-tailwind` | `html-css`. Images go to a directory
 (one file per node id, except PDF which is one multi-page file). HTML goes to a file path.
+`Export(["document"])` fails — `"document"` is not a node id. Several root siblings in **one**
+PNG (screens + overlay + notes): [`export.md`](export.md).
 
 **Screenshot cadence.** `TakeScreenshot([id])` attaches images to the same `execute` response. End a
 section-completing call with a screenshot of the smallest meaningful node. Do not screenshot the

@@ -1,10 +1,10 @@
 ---
 name: pencil-design
-description: Use this skill for any pencil.dev work, such as designing UI in a .pen file, editing an open Pencil canvas, sketching or mocking screens, instantiating components from a .lib.pen library, reading an existing design system from a .pen or .lib.pen file, fixing execute schema errors, or recovering from Pencil MCP host-not-connected issues. Pick it on any mention of pencil.dev, .pen, .lib.pen, "the Pencil MCP", "the Pencil canvas", or a design-system/ folder in a Pencil context, even when the user phrases it casually, mid-sentence, or doesn't name the tool. This is the canonical skill for all Pencil tasks; reach for it before any general design or frontend skill when Pencil signals are present.
+description: Use this skill for any pencil.dev work, such as designing UI in a .pen file, editing an open Pencil canvas, sketching or mocking screens, instantiating components from a .lib.pen library, reading an existing design system from a .pen or .lib.pen file, fixing execute schema errors, recovering from Pencil MCP host-not-connected issues, or exporting a .pen (one frame, whole canvas, or multi-screen flow) as a single PNG/JPEG/PDF/HTML. Pick it on any mention of pencil.dev, .pen, .lib.pen, "the Pencil MCP", "the Pencil canvas", "export the canvas", "export the flow", 导出整图, 流程图导出, or a design-system/ folder in a Pencil context, even when the user phrases it casually, mid-sentence, or doesn't name the tool. This is the canonical skill for all Pencil tasks; reach for it before any general design or frontend skill when Pencil signals are present.
 license: MIT
 compatibility: Any AI coding tool with the pen.dev MCP server configured (Claude Code, Claude Desktop, Cursor, Windsurf, Codex CLI, Antigravity, OpenCode). The MCP server still registers as `pencil`. Headless workflows use `@pen.dev/cli` (`pen`); see `references/pencil-cli.md`.
 metadata:
-  version: "0.9.2"
+  version: "0.9.5"
 permissions:
   mcp:
     - pencil:get_app_state
@@ -100,7 +100,7 @@ Pre-flight each visual `execute`: name, context, `$variable` colours, `fill_cont
 | Style / palette / fonts (greenfield) | [`style-catalogue.md`](references/style-catalogue.md), [`colour-palettes.md`](references/colour-palettes.md), [`font-pairings.md`](references/font-pairings.md) |
 | Shader / script / mesh / arcs | [`advanced-canvas.md`](references/advanced-canvas.md) + `include_scripts_and_shaders: true` |
 | Live website / localhost preview | `browser` (`load-page` then `import-to-canvas` / `return-screenshot`) |
-| Export / handoff | `Export([id], "png"\|"html-tailwind", path)` inside `execute` |
+| Export / handoff / whole-canvas PNG / flow image / 导出整图 | [`export.md`](references/export.md) — load before any `Export` |
 | Headless / CI / `pen` CLI | [`pencil-cli.md`](references/pencil-cli.md) — no auto-fall-back |
 | Schema / node types | [`pen-schema.md`](references/pen-schema.md) |
 | Worked walkthrough | `examples/example-*.md` matching the task |
@@ -153,7 +153,7 @@ Trigger → first fix → still failing.
 
 Always-on details: [`discipline.md`](references/discipline.md), [`aesthetic-foundation.md`](references/aesthetic-foundation.md), [`mcp-tools.md`](references/mcp-tools.md), [`batch-design-grammar.md`](references/batch-design-grammar.md).
 
-On demand (see table above): anatomy, composition, file-architecture, forms, flows, states, interactions, layout-patterns, visual-hierarchy, iteration-patterns, microcopy, mobile-patterns, iconography, data-viz, industry-patterns, style/colour/font catalogues, advanced-canvas, pen-schema, pencil-cli.
+On demand (see table above): anatomy, composition, file-architecture, export, forms, flows, states, interactions, layout-patterns, visual-hierarchy, iteration-patterns, microcopy, mobile-patterns, iconography, data-viz, industry-patterns, style/colour/font catalogues, advanced-canvas, pen-schema, pencil-cli.
 
 Examples: `examples/example-login-screen.md`, `example-import-library.md`, `example-error-screen.md`, `example-form-flow.md`, `example-component-deep-dive.md`, and the other `example-*.md` files.
 
