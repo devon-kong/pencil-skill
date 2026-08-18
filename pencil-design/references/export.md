@@ -22,6 +22,155 @@ Do not run A and B in the same task. `Export` writes **one file per node id** �
 
 ---
 
+## HTML Tailwind fidelity — deterministic repair only
+
+`html-tailwind` is a convenience export, not a lossless `.pen` renderer. In
+particular it can flatten per-corner radii, turn a declared height into `h-fit`,
+or omit `clip`. Do **not** fix those by looking at the page and hand-editing
+classes. The only approved route is this inventory-bound pipeline. It changes
+the exported HTML only; it never edits the `.pen` JSON.
+
+### Gate 0 — scope and tool availability
+
+- This recipe requires `scripts/fix_pen_html.py` beside this skill and a local
+  Python 3 standard library. If either is unavailable, stop after the raw
+  export; do not hand-patch HTML.
+- Every node must have a non-empty Pencil name. The inventory is a full export
+  manifest, not a six-row list of suspected dialogs.
+- `dockBottom` is an explicit policy flag. Set it only for an already-known
+  bottom sheet family in the source design; never infer it from an HTML image.
+
+### 1. Pick one artifact contract before exporting
+
+Do not mix a buildable page with flow annotations.
+
+| Contract | Allowed roots | Purpose |
+|---|---|---|
+| `screen-html` | exactly one screen frame | engineering handoff; no titles, notes, arrows, or `Flow Overlay` |
+| `flow-html` | screens plus the explicit overlay/title/note roots | design-review flow diagram; annotations are expected |
+
+For a page, export the screen only:
+
+```
+Export(["<screen-id>"], "html-tailwind", "./exports/<screen-id>.raw.html")
+```
+
+Never use a flow-board HTML as evidence that an individual page is clean. A
+global red border or arrow can legitimately cross the canvas near a screen.
+Some Pencil versions still append `Flow Overlay` to a one-screen HTML export;
+the explicit build-time scope filter below removes that unapproved root, and
+the later check proves it is absent from the deliverable.
+
+### 2. Capture the full `.pen` truth inventory for that exact export
+
+Run one `Get` visitor and save its `Print` lines verbatim as
+`./exports/inventory.jsonl`. The `path` is required because raw Pencil HTML
+has `data-pencil-name` but may not have `data-pencil-id`; duplicate names make
+name-only matching unsafe.
+
+Call `Get("<screen-id>", …)` for `screen-html`, or `Get(document, …)` for a
+flow export. For a multi-root flow, the `Export` list must stay in document
+order. The following path builder is relative to the selected export roots,
+not the entire canvas, so a one-screen export still has root path `[0]`.
+
+For a known `Dialog Container` bottom-sheet family, this is the capture
+predicate. For another family, replace only the explicit `isDockedSheet`
+predicate with the policy already agreed for that design.
+
+```
+const paths={}
+const nextChild={}
+let rootIndex=0
+Get((n,c)=>{
+  if(!n.name)throw new Error("Every exported node needs a name")
+  const parentId=c.parentCtx?.node?.id
+  let path
+  if(!parentId||!paths[parentId])path=[rootIndex++]
+  else {
+    const childIndex=nextChild[parentId]??0
+    nextChild[parentId]=childIndex+1
+    path=[...paths[parentId],childIndex]
+  }
+  paths[n.id]=path
+  const parent=c.parentCtx?.bounds
+  const isDockedSheet=n.name==="Dialog Container"&&parent&&typeof n.y==="number"&&n.y+c.bounds.height>=parent.height-2
+  Print(JSON.stringify({
+    id:n.id,name:n.name,path,
+    x:n.x,y:n.y,width:n.width,height:n.height,
+    boundsWidth:c.bounds.width,boundsHeight:c.bounds.height,
+    parentBoundsHeight:parent?.height,
+    cornerRadius:n.cornerRadius,clip:n.clip,padding:n.padding,
+    dockBottom:isDockedSheet
+  }))
+})
+```
+
+The script rejects inventories that are not a one-to-one match with every
+`data-pencil-name` element in the raw export. This is intentional: an
+unmatched node is a failed export, not permission for a manual correction.
+
+### 3. Build, scope-check, and verify without vision
+
+```
+python3 <skill-root>/scripts/fix_pen_html.py \
+  --html ./exports/raw.html \
+  --inventory ./exports/inventory.jsonl \
+  --out ./exports/patched.html \
+  --expected-root <screen-id> \
+  --scope-filter \
+  --report ./exports/patched.report.json
+
+python3 <skill-root>/scripts/fix_pen_html.py \
+  --html ./exports/patched.html \
+  --inventory ./exports/inventory.jsonl \
+  --check \
+  --expected-root <screen-id> \
+  --report ./exports/check.report.json
+```
+
+The build prints the injected-ID and changed-node counts. `--check` is
+read-only for the HTML and must print `no patches needed`; `--report` is the
+only optional write in check mode. The script fails before writing an HTML
+artifact when a node is missing, duplicated, unexpected, structurally
+mis-mapped, or outside the expected root scope. It is byte-idempotent: a
+second build must make no change.
+
+A non-visual model accepts only when both reports have `"ok": true`, the
+`roots` list equals the approved scope, every `docked[].ok` is true, and the
+second report has an empty `patched` list. These are release gates, not hints.
+
+The repairs are intentionally narrow:
+
+| `.pen` truth | HTML repair |
+|---|---|
+| `[16,16,0,0]` corner radius | `rounded-tl-[16px] rounded-tr-[16px]` |
+| numeric `height` | `h-[Npx]`, replacing `h-fit` |
+| explicit `dockBottom:true` | `h-[parentBoundsHeight-y]` |
+| `clip:true` | `overflow-hidden` |
+
+Do not add `overflow-hidden` merely because a height was repaired: that would
+change a source node whose `clip` is false.
+
+### 4. Optional visual audit
+
+Use this only when a human or visual-capable model is available. It is not a
+release prerequisite for a weak model.
+
+1. `TakeScreenshot(["<frame-id>"])` from the open `.pen`.
+2. Load the patched local HTML with `browser({ action:"load-page", url:"file:///absolute/patched.html" })`.
+3. `return-screenshot` the same node by its injected ID, for example
+   `[data-pencil-id="<frame-id>"]`.
+4. Compare the sheet's bottom edge and lower corners. A docked sheet must meet
+   the frame bottom; only the corner radii recorded in the inventory may be
+   present. Check this per frame, not by searching class strings.
+
+No pixel-perfect text assertion is implied by this audit; the machine gates
+already validate the geometry this repair owns. A visual mismatch is a reason
+to extend the inventory rule or script fixture, never a reason to edit one
+HTML page by hand.
+
+---
+
 ## Recipe A — `ExportBoard` (default)
 
 Pencil renders a node and its descendants. Arrows in a sibling overlay are invisible when you export a screen, and a screen is invisible when you export the overlay. Copying every root into one white frame lets the renderer composite them.
